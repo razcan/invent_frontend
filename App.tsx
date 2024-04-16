@@ -1,71 +1,42 @@
-import { BarcodeScanningResult, CameraView, useCameraPermissions } from 'expo-camera/next';
+import { BarcodeScanningResult, CameraView, useCameraPermissions, ScanningOptions } from 'expo-camera/next';
 import { useEffect, useState } from 'react';
-import { Button, SafeAreaView, StyleSheet, TextInput, View, ActivityIndicator, FlatList, SectionList, StatusBar, Text } from 'react-native';
+import {
+  Button, SafeAreaView, StyleSheet, TextInput, View,
+  Alert, Modal, Pressable,
+  ActivityIndicator, FlatList, SectionList, StatusBar, Text
+} from 'react-native';
 // import QRCode from 'qrcode';
 import QRCode from 'react-native-qrcode-svg';
 //import { Button } from '@rneui/themed';
-import { useForm, SubmitHandler } from "react-hook-form"
-import "./styles.css";
+type ItemProps = { name: string };
 
-
-type ItemProps = { title: string };
-
-const Item = ({ title }: ItemProps) => (
-  <View style={styles.item}>
-    <Text style={styles.title}>{title}</Text>
-  </View>
-);
+// const Item = ({ name }: ItemProps) => (
+//   <View style={styles.item}>
+//     <Text style={styles.title}>{name}</Text>
+//   </View>
+// );
 
 export default function App() {
   const [permission, requestPermission] = useCameraPermissions();
-  const [type, setType] = useState("back");
-  const [showCamera, setShowCamera] = useState(true);
   const [text, setText] = useState('');
   const [data, setData] = useState('https://softhub.ro');
   const [isLoading, setIsLoading] = useState(true);
-  const [someDATA, setDATAfetch] = useState([]);
-
+  const [itemData, setItemData] = useState(null);
+  const [modalVisible, setModalVisible] = useState(false);
   type Inputs = {
     example: string
     exampleRequired: string
   }
 
-  const {
-    register,
-    handleSubmit,
-    watch,
-    formState: { errors }
-  } = useForm({
-    defaultValues: {
-      example: "",
-      exampleRequired: ""
-    }
-  });
-
-  console.log(watch("example")) // watch input value by passing the name of it
-
-
-  const gg = () => {
+  const showDetails = async () => {
     setData(text)
+    const response = await fetch(`https://eight-cooks-give.loca.lt/items/find/${text}`);
+    const responseData = await response.json();
+    setItemData(responseData);
   }
-  console.log(isLoading);
+  // console.log(isLoading);
 
-  const fetchData = async () => {
-    try {
-      const response = await fetch('https://jsonplaceholder.typicode.com/posts');
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-      const responseData = await response.json();
-      console.log(responseData);
-      setDATAfetch(responseData)
-      setIsLoading(false);
-      console.log(isLoading);
-    } catch (error) {
-      console.error('Error fetching data:', error);
-      setIsLoading(false);
-    }
-  };
+
 
   useEffect(() => {
     void requestPermission().then(console.log);
@@ -85,31 +56,48 @@ export default function App() {
   }
 
 
-  const handleBarCodeScanned = ({ type, data }) => {
+  const handleBarCodeScanned = async ({ type, data }) => {
     setText(data);
+    setModalVisible(true)
+    setData(text)
+    const response = await fetch(`https://eight-cooks-give.loca.lt/items/find/${text}`);
+    const responseData = await response.json();
+    setItemData(responseData);
     // console.log(
     //   `Bar code with type ${type} and data ${data} has been scanned!`
     // );
 
   };
 
+  // type ItemProps = { title: string };
 
-  type ItemProps = { title: string };
+  // const Item = ({ name }: ItemProps) => (
+  //   <View style={styles.item}>
+  //     <Text style={styles.title}>{name}</Text>
+  //   </View>
+  // );
 
-  const Item = ({ title }: ItemProps) => (
-    <View style={styles.item}>
-      <Text style={styles.title}>{title}</Text>
-    </View>
-  );
+  // const handleCamReady = () => {
+  //   setText(data);
+  //   console.log("ceva")
+  // };
 
 
   return (
     <SafeAreaView>
       <CameraView
         style={styles.camera}
+
         // facing={type}
+        // zoom={0.5}
         onBarcodeScanned={handleBarCodeScanned}
+        // onCameraReady={handleCamReady}
+
         barcodeScannerSettings={{
+          interval: 100,
+          // isPinchToZoomEnabled: true,
+
+
           barcodeTypes: [
             "qr",
             "pdf417",
@@ -130,7 +118,52 @@ export default function App() {
       >
 
       </CameraView>
-      <TextInput style={{ backgroundColor: '#f9c2ff', fontSize: 16, margin: 18, }}
+
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => {
+          Alert.alert('Modal has been closed.');
+          setModalVisible(!modalVisible);
+        }}>
+
+        <View style={styles.centeredView}>
+          <View style={styles.modalView}>
+            <Text style={styles.modalText}>Informatii despre articolul scanat:</Text>
+
+            {itemData && (
+              <View style={{ margin: 20 }}>
+                <Text>ID: {itemData.id}</Text>
+                <Text>Name: {itemData.name}</Text>
+                <Text>Code: {itemData.code}</Text>
+                <Text>Description: {itemData.description}</Text>
+                <Text>QR Code: {itemData.qrCode}</Text>
+                <Text>Expiration Date: {itemData.expirationDate}</Text>
+                <Text>Zone: {itemData.zone}</Text>
+                <Text>Location 1: {itemData.location1}</Text>
+                <Text>Location 2: {itemData.location2}</Text>
+                <Text>Location 3: {itemData.location3}</Text>
+                {/* Render other fields as needed */}
+              </View>
+            )}
+
+            <Pressable
+              style={[styles.button, styles.buttonClose]}
+              onPress={() => setModalVisible(!modalVisible)}>
+              <Text style={styles.textStyle}>Inchide</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
+
+      {/* <Pressable
+        style={[styles.button, styles.buttonOpen]}
+        onPress={() => setModalVisible(true)}>
+        <Text style={styles.textStyle}>Show Modal</Text>
+      </Pressable> */}
+
+      <TextInput style={{ backgroundColor: '#f9c2ff', fontSize: 18, margin: 20, }}
         value={text}
       />
 
@@ -139,62 +172,90 @@ export default function App() {
       </View> */}
 
 
+      {/* <View style={styles.qrCodeContainer}>
+        <Text style={styles.title}>{localdata}</Text>
+      </View> */}
 
-      <Button title="Press Me" onPress={gg} />
-      <Button title="GetData" onPress={fetchData} />
 
-      <form
-        onSubmit={handleSubmit((data) => {
-          alert(JSON.stringify(data));
-        })}
-      >
-        <label>Example</label>
-        <input {...register("example")} defaultValue="test" />
-        <label>ExampleRequired</label>
-        <input
-          {...register("exampleRequired", { required: true, maxLength: 10 })}
-        />
-        {errors.exampleRequired && <p>This field is required</p>}
-        <input type="submit" />
-      </form>
+      {/* {itemData && (
+        <View style={{ margin: 20 }}>
+          <Text>ID: {itemData.id}</Text>
+          <Text>Name: {itemData.name}</Text>
+          <Text>Code: {itemData.code}</Text>
+          <Text>Description: {itemData.description}</Text>
+          <Text>QR Code: {itemData.qrCode}</Text>
+          <Text>Expiration Date: {itemData.expirationDate}</Text>
+          <Text>Zone: {itemData.zone}</Text>
+          <Text>Location 1: {itemData.location1}</Text>
+          <Text>Location 2: {itemData.location2}</Text>
+          <Text>Location 3: {itemData.location3}</Text>
+        </View>
+      )} */}
 
-      <FlatList
+
+      {/* <Button title="Afiseaza Detalii" onPress={showDetails} /> */}
+      {/* <Button title="GetData" onPress={fetchData} /> */}
+      {/* <Button title="GetLocalData" onPress={fetchLocalData} /> */}
+
+
+      {/* <FlatList
         data={someDATA}
-        renderItem={({ item }) => <Item title={item.title} />}
+        renderItem={({ item }) => <Item name={item.name} />}
         keyExtractor={item => item.id}
-      />
+      /> */}
 
     </SafeAreaView>
   );
 }
-
 const styles = StyleSheet.create({
-  camera: {
-    height: 200,
-    margin: 20,
-    borderWidth: 1,
-    padding: 20,
-  },
-  buttonContainer: {
+  centeredView: {
     flex: 1,
-    flexDirection: 'row-reverse',
-    alignItems: 'flex-end',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 22,
+  },
+  camera: {
+    margin: 20,
+    marginRight: 20,
+
+    height: 400,
+    width: 350
+  },
+
+  modalView: {
+    margin: 20,
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 35,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
   },
   button: {
-    flex: 1,
-  },
-  qrCodeContainer: {
-    borderWidth: 1,
-    borderColor: 'black',
+    margin: 20,
+    borderRadius: 20,
     padding: 10,
+    elevation: 2,
   },
-  item: {
-    backgroundColor: '#f9c2ff',
-    padding: 20,
-    marginVertical: 8,
-    marginHorizontal: 16,
+  buttonOpen: {
+    backgroundColor: '#F194FF',
   },
-  title: {
-    fontSize: 32,
+  buttonClose: {
+    backgroundColor: '#2196F3',
+  },
+  textStyle: {
+    color: 'white',
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  modalText: {
+    marginBottom: 15,
+    textAlign: 'center',
   },
 });
