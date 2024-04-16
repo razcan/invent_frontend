@@ -1,0 +1,40 @@
+=> Linking Binary 'ngrok' to '/usr/local/bin/ngrok'
+
+ngrok http http://localhost:8080
+
+brew install ngrok/ngrok/ngrok
+ngrok config add-authtoken 1vFwZLFnPnvhFmLES51umyLKrp8_3eEhF4axeo87eD365TPH3
+
+aici se genereaza un link extern
+ngrok http http://localhost:8080
+
+aici se seteaza o variabila cu linkul generat de ngrok
+export EXPO_PACKAGER_PROXY_URL=https://eddd-86-127-162-187.ngrok-free.app 
+
+aici se porneste aplicatia - scanare qr si este ok
+npx expo start
+
+https://docs.expo.dev/versions/latest/sdk/camera-next/#barcodesettings
+
+https://github.com/expo/expo/issues/26687
+https://github.com/stefan-schweiger?tab=repositories
+
+Libraries that are used in this template:
+Navigation: react-navigation V6
+API request: react-query and axios
+State Management: redux-toolkit and redux-persist
+Translation: i18next and react-i18next react-native-localize
+Forms: react-hook-form and yup
+Storage: react-native-mmkv
+Styling: styled-components
+Testing: @testing-library/react-native
+Documentation: Storybook using react-native-web
+
+
+echo "# invent_frontend" >> README.md
+git init
+git add README.md
+git commit -m "first commit"
+git branch -M main
+git remote add origin https://github.com/razcan/invent_frontend.git
+git push -u origin main
